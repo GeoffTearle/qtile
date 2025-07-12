@@ -862,19 +862,16 @@ class Core(base.Core, wlrq.HasListeners):
         self.idle.notify_activity(self.seat)
         self._gestures.send_hold_end(self.seat, event.time_msec, event.cancelled)
 
-
     # MOD BY TRA
     # TODO: how do we handle scrolling?
     # TODO: we have to keep track of event.touch_id for multi-touch devices
     # TODO: when touch is held for some/ time-period, treat it as a long press (-> alt mouse click?)
 
-
     # FIXME: try figuring out the logic that is required for this work. We are able to:
     # - move the cursor using motion (not really required)
     # - click elements of qtile (like bar elements)
 
-    def _on_cursor_touch_down(self,
-                              _listener: Listener, event: touch.TouchDownEvent) -> None:
+    def _on_cursor_touch_down(self, _listener: Listener, event: touch.TouchDownEvent) -> None:
         logger.debug("Detected touch down")
         self._touch_finger_count += 1
 
@@ -885,7 +882,13 @@ class Core(base.Core, wlrq.HasListeners):
 
         if self._implicit_grab is not None:
             logger.debug("Implicit grab touch down fired")
-            self.seat.touch_notify_down(self._implicit_grab.surface, event.time_msec, event.touch_id, self._implicit_grab.start_dx, self._implicit_grab.start_dy)
+            self.seat.touch_notify_down(
+                self._implicit_grab.surface,
+                event.time_msec,
+                event.touch_id,
+                self._implicit_grab.start_dx,
+                self._implicit_grab.start_dy,
+            )
 
         handled = False
         if not self.exclusive_client:
@@ -894,23 +897,27 @@ class Core(base.Core, wlrq.HasListeners):
             # maybe we need to CHECK whether the touch WOULD BE HANDLED, instead of directly handling it?
             handled = self._process_cursor_button(1, True)
 
-        if not handled: 
+        if not handled:
             win, surface, sx, sy = found
             logger.debug("No implicit grab found on touch down")
             if surface:
                 self._create_implicit_grab(event.time_msec, surface, sx, sy)
-                self.seat.touch_notify_down(self._implicit_grab.surface, event.time_msec, event.touch_id, self._implicit_grab.start_dx, self._implicit_grab.start_dy)
+                self.seat.touch_notify_down(
+                    self._implicit_grab.surface,
+                    event.time_msec,
+                    event.touch_id,
+                    self._implicit_grab.start_dx,
+                    self._implicit_grab.start_dy,
+                )
 
-
-    def _on_cursor_touch_up(self,
-                              _listener: Listener, event: touch.TouchUpEvent) -> None:
+    def _on_cursor_touch_up(self, _listener: Listener, event: touch.TouchUpEvent) -> None:
         # TODO: How do we make sure we do not fire a "click" after moving?
         #           we need some kind of state, I guess?
         logger.debug("Detected touch up")
         self._touch_finger_count = max(0, self._touch_finger_count - 1)
 
         # When uncommenting the following line, touch events on client surfaces will KIND OF work, but not really
-        #self.seat.pointer_notify_button(event.time_msec, wlrq.BTN_LEFT, input_device.ButtonState.PRESSED)
+        # self.seat.pointer_notify_button(event.time_msec, wlrq.BTN_LEFT, input_device.ButtonState.PRESSED)
 
         if self._implicit_grab is not None:
             self.seat.touch_notify_up(event.time_msec, event.touch_id)
@@ -921,9 +928,10 @@ class Core(base.Core, wlrq.HasListeners):
         # FIXME: This should not be necessary? Yet without this, touches are not registered at all
         # Maybe we are misunderstanding TouchDown and TouchUp? Maybe every event is handled on Touch Down?
         self.seat.touch_notify_up(event.time_msec, event.touch_id)
-        
-    def _on_cursor_touch_motion(self,
-                              _listener: Listener, event: touch.TouchMotionEvent|touch.TouchDownEvent) -> None:
+
+    def _on_cursor_touch_motion(
+        self, _listener: Listener, event: touch.TouchMotionEvent | touch.TouchDownEvent
+    ) -> None:
         logger.debug("Detected touch motion")
         # FIXME: Moving the cursor like this using touch does not really serve any purpose?
 
@@ -937,8 +945,7 @@ class Core(base.Core, wlrq.HasListeners):
         else:
             self._implicit_grab_motion(event.time_msec)
 
-    def _on_cursor_touch_frame(self,
-                              _listener: Listener, _data: Any) -> None:
+    def _on_cursor_touch_frame(self, _listener: Listener, _data: Any) -> None:
         logger.debug("Detected touch frame")
         self.seat.touch_notify_frame()
 
@@ -1774,7 +1781,7 @@ class Core(base.Core, wlrq.HasListeners):
     def get_inputs(self) -> dict[str, list[dict[str, str]]]:
         """Get information on all input devices."""
         info: defaultdict[str, list[dict]] = defaultdict(list)
-        devices: list[inputs._Device] = self.keyboards + self._pointers + self.touch_devices # type: ignore
+        devices: list[inputs._Device] = self.keyboards + self._pointers + self.touch_devices  # type: ignore
 
         for dev in devices:
             type_key, identifier = dev.get_info()
